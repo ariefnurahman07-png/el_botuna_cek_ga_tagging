@@ -179,12 +179,12 @@ for(const [k,p] of Object.entries(P)){
 }
 
 /* memuat data */
-async function fetchText(url,onp){const r=await fetch(url);if(!r.ok)throw new Error(url+' '+r.status);
+async function fetchText(url,onp){const r=await fetch(url,{cache:'no-cache'});if(!r.ok)throw new Error(url+' '+r.status);
  const len=+r.headers.get('content-length')||0;if(!r.body||!len){onp(.5);return await r.text()}
  const rd=r.body.getReader(),ch=[];let got=0;for(;;){const {done,value}=await rd.read();if(done)break;ch.push(value);got+=value.length;onp(Math.min(.98,got/len))}
  return new TextDecoder().decode(await new Blob(ch).arrayBuffer())}
 async function load(k){const p=P[k],bar=$('.load i',p.el),note=$('.note',p.el);
- try{const meta=await (await fetch(p.file+'.dict.json')).json();
+ try{const meta=await (await fetch(p.file+'.dict.json',{cache:'no-cache'})).json();
   const txt=await fetchText(p.file+'.rows.txt',f=>bar.style.width=(f*100)+'%');
   const cut=txt.indexOf('\n#\n'),pl=txt.slice(0,cut).split('\n'),rl=txt.slice(cut+3).split('\n');
   const nc=meta.cols.length,prof=new Uint32Array(pl.length*nc);
