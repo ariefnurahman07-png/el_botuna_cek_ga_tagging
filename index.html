@@ -93,6 +93,16 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .more{display:flex;justify-content:center;margin-top:12px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1b1b1f;color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 .toast.on{opacity:1}
+.warn{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin:0 0 18px;padding:16px 18px 16px 22px;border-radius:16px;background:#1b1b1f;color:#fff;border:3px solid var(--yel);box-shadow:0 8px 24px rgba(228,0,43,.18)}
+.warn::before{content:"";position:absolute;inset:0 auto 0 0;width:10px;border-radius:13px 0 0 13px;background:repeating-linear-gradient(135deg,var(--yel) 0 8px,#1b1b1f 8px 16px)}
+.warn .bad{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--red);font-size:30px;font-weight:800;color:#fff;box-shadow:0 0 0 5px rgba(228,0,43,.3);animation:beat 1.8s infinite}
+@keyframes beat{0%,100%{box-shadow:0 0 0 4px rgba(228,0,43,.35)}50%{box-shadow:0 0 0 10px rgba(228,0,43,.08)}}
+@media(prefers-reduced-motion:reduce){.warn .bad{animation:none}}
+.warn h3{margin:0 0 6px;font-size:17px;color:var(--yel);letter-spacing:.02em}
+.warn ol{margin:0;padding-left:20px;font-size:15px;line-height:1.5}
+.warn b{color:var(--yel)}.warn em{font-style:normal;background:var(--red);color:#fff;border-radius:6px;padding:0 6px;font-weight:800}
+.warn.sm{padding:10px 14px 10px 20px;margin:16px 0 0;border-width:2px}.warn.sm .bad{width:36px;height:36px;font-size:20px}.warn.sm ol{font-size:13.5px}
+@media(max-width:600px){.warn{grid-template-columns:minmax(0,1fr)}.warn .bad{width:40px;height:40px;font-size:22px}}
 footer{background:#1b1b1f;color:#cfcfd6;font-size:13px}footer .wrap{padding-block:18px}
 </style>
 </head>
@@ -161,6 +171,7 @@ const main=$('#main');
 for(const [k,p] of Object.entries(P)){
  main.insertAdjacentHTML('beforeend',`<section class="panel" id="p-${k}" role="tabpanel" hidden>
  <div class="phead"><h2>${p.title}</h2><span class="upd"><span class="dot"></span><span class="updt">Memuat data…</span></span></div>
+ <div class="warn" role="note"><span class="bad" aria-hidden="true">!</span><div><h3>PERNYATAAN</h3><ol><li>Data yang tersedia di sini merupakan <em>INDIKASI</em> yang diperuntukkan untuk <b>SECOND OPINION</b>.</li><li>Acuan data <b>TETAP MENGACU PADA SOT (Single Of Truth) RA &amp; BAI</b>, serta <b>CIRCLE JAVA</b> sebagai <em>PENENTU</em>.</li></ol></div></div>
  <div class="grid">
   <div class="card">
    <label class="lb" for="in-${k}">Daftar MSISDN <span class="cnt">0 nomor terdeteksi</span></label>
@@ -174,6 +185,7 @@ for(const [k,p] of Object.entries(P)){
  <div class="tools" hidden><input type="search" placeholder="Cari di hasil (MSISDN, MC, PT, outlet…)" aria-label="Cari di hasil"><select aria-label="Filter status"><option value="">Semua status</option><option>Ditemukan</option><option>Tidak ditemukan</option><option>Format tidak valid</option></select></div>
  <div class="tw" hidden><table><thead></thead><tbody></tbody></table></div>
  <div class="more" hidden><button class="b">Tampilkan 500 baris lagi</button></div>
+ <div class="warn sm res" hidden role="note"><span class="bad" aria-hidden="true">!</span><div><h3>PERNYATAAN</h3><ol><li>Data yang tersedia di sini merupakan <em>INDIKASI</em> yang diperuntukkan untuk <b>SECOND OPINION</b>.</li><li>Acuan data <b>TETAP MENGACU PADA SOT (Single Of Truth) RA &amp; BAI</b>, serta <b>CIRCLE JAVA</b> sebagai <em>PENENTU</em>.</li></ol></div></div>
 </section>`);
  p.el=$('#p-'+k);p.res=[];p.view=[];p.shown=500;p.filter={};p.sort=null;
 }
@@ -233,7 +245,7 @@ function summary(k){const p=P[k],r=p.res,box=$('.sum',p.el);
  box.innerHTML=h}
 
 function render(k){const p=P[k],tw=$('.tw',p.el),tools=$('.tools',p.el),more=$('.more',p.el);
- const has=p.res.length>0;tw.hidden=tools.hidden=!has;if(!has){more.hidden=true;return}
+ const has=p.res.length>0;tw.hidden=tools.hidden=!has;$('.warn.res',p.el).hidden=!has;if(!has){more.hidden=true;return}
  const q=$('.tools input',p.el).value.trim().toLowerCase();
  let v=p.res.filter(r=>Object.entries(p.filter).every(([fk,fv])=>!fv||r[fk]===fv));
  if(q)v=v.filter(r=>Object.values(r).some(x=>String(x).toLowerCase().includes(q)));
@@ -248,7 +260,8 @@ function render(k){const p=P[k],tw=$('.tw',p.el),tools=$('.tools',p.el),more=$('
 function tsv(k){const p=P[k],rows=p.view.length?p.view:p.res;
  const clean=s=>String(s??'').replace(/[\t\n\r]/g,' ');
  const head=['No',...p.cols.map(c=>c[0])].join('\t');
- return head+'\n'+rows.map((r,i)=>[i+1,...p.cols.map(([l,c,t])=>{let x=r[c]??'';if(t==='d')x=fd(x);if(t==='t')x=dtid(x);
+ const pre=['PERNYATAAN:','1. Data yang tersedia di sini merupakan "INDIKASI" yang diperuntukkan untuk SECOND OPINION.','2. Acuan data TETAP MENGACU PADA SOT (Single Of Truth) RA & BAI, serta CIRCLE JAVA sebagai PENENTU.',`Sumber: el_botuna_cek_ga_tagging · ${p.title} · Update data: ${p.upd||''}`,''].map(x=>x.includes('"')?'"'+x.replace(/"/g,'""')+'"':x).join('\n')+'\n';
+ return pre+head+'\n'+rows.map((r,i)=>[i+1,...p.cols.map(([l,c,t])=>{let x=r[c]??'';if(t==='d')x=fd(x);if(t==='t')x=dtid(x);
   if(c==='m'||/QR|org_id|organization_id/.test(c))x=x?'="'+x+'"':'';return clean(x)})].join('\t')).join('\n')}
 async function copyText(s){try{await navigator.clipboard.writeText(s);return true}catch(e){const ta=document.createElement('textarea');ta.value=s;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}}
 
@@ -269,7 +282,7 @@ for(const k of Object.keys(P)){const p=P[k],el=p.el,ta=$('textarea',el),dr=$('.d
  el.addEventListener('click',async e=>{const b=e.target.closest('[data-a],[data-fk],th,.more button');if(!b)return;
   if(b.dataset.a==='cek'){if(!p.ready)return;b.disabled=true;b.textContent='Mengecek…';setTimeout(()=>{check(k);b.disabled=false;b.textContent='Cek '+p.short;$('.sum',el).scrollIntoView({block:'nearest',behavior:'smooth'})},20)}
   else if(b.dataset.a==='reset'){ta.value='';fi.value='';p.res=[];p.view=[];upd(k);summary(k);render(k);$('[data-a=copy]',el).disabled=true;$('.note',el).textContent=p.ready?'Input dan hasil sudah dikosongkan.':''}
-  else if(b.dataset.a==='copy'){const ok=await copyText(tsv(k));toast(ok?`${fmt((p.view.length||p.res.length))} baris tersalin. Buka Excel kosong lalu Ctrl+V.`:'Browser menolak akses clipboard')}
+  else if(b.dataset.a==='copy'){const ok=await copyText(tsv(k));toast(ok?`${fmt((p.view.length||p.res.length))} baris tersalin beserta pernyataan INDIKASI. Buka Excel kosong lalu Ctrl+V.`:'Browser menolak akses clipboard')}
   else if(b.dataset.fk){const fk=b.dataset.fk,fv=b.dataset.fv;if(fk==='st'){p.filter.st=p.filter.st===fv?'':fv;$('.tools select',el).value=p.filter.st||''}else p.filter[fk]=p.filter[fk]===fv?'':fv;p.shown=500;summary(k);render(k)}
   else if(b.tagName==='TH'){const c=b.dataset.c;if(c==='#'){p.sort=null}else p.sort=p.sort&&p.sort[0]===c?[c,-p.sort[1]]:[c,1];render(k)}
   else if(b.closest('.more')){p.shown+=500;render(k)}});
